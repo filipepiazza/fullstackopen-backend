@@ -84,12 +84,13 @@
 const express = require('express')
 const app = express()
 var morgan = require('morgan')
-
 const cors = require('cors')
 
 app.use(cors())
 
 app.use(express.json())
+
+app.use(express.static('dist'))
 
 morgan.token('bodytype', function (req, res) { return req.bodyType })
 
