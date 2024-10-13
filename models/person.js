@@ -3,9 +3,7 @@ require('dotenv').config();
 const mongoose = require('mongoose')
 
 const url = process.env.MONGODB_URI
- // `mongodb+srv://filipepiazza:${password}@cluster0.atypk.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=${dbName}`
 
-//console.log(url);
 mongoose.set('strictQuery',false)
 
 mongoose.connect(url)
@@ -26,7 +24,6 @@ const validateSpecialNumber = function(value) {
   return (firstPart.length + secondPart.length) >= 8;
 };
 
-
 const personSchema = new mongoose.Schema({
   name: {type: String, minLength: 5, required: true},
   number: {type: String, minLength: 8, 
@@ -36,7 +33,6 @@ const personSchema = new mongoose.Schema({
     },
     required: true},
 })
-
 
 // Custom validation function
 personSchema.statics.validateUpdate = function(update) {
