@@ -148,7 +148,6 @@ app.get('/api/persons', (request, response) => {
     const {name , number} = request.body
     console.log(request.body);
     console.log(name,number);
-    const unset = { $unset: { name: 1 } };
 
     // Validate the update payload
     const validationError = Person.validateUpdate(request.body);
