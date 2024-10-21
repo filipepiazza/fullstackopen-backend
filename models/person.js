@@ -1,41 +1,35 @@
-require('dotenv').config(); 
-
 const mongoose = require('mongoose')
 
-const url = process.env.MONGODB_URI
-
-mongoose.set('strictQuery',false)
-
-mongoose.connect(url)
-
 // Custom validator function
-const validateSpecialNumber = function(value) {
+const validateSpecialNumber = function (value) {
   // Regular expression to match the pattern
   const regex = /^(\d{2,3})-(.{8,})$/;
-  
+
   if (!regex.test(value)) {
     return false;
   }
-  
+
   // Extract the parts of the number
   const [, firstPart, secondPart] = value.match(regex);
-  
+
   // Check if the total number of digits is 8
   return (firstPart.length + secondPart.length) >= 8;
 };
 
 const personSchema = new mongoose.Schema({
-  name: {type: String, minLength: 5, required: true},
-  number: {type: String, minLength: 8, 
+  name: { type: String, minLength: 5, required: true },
+  number: {
+    type: String, minLength: 8,
     validate: {
       validator: validateSpecialNumber,
       message: props => `${props.value} is not a valid phone number!`
     },
-    required: true},
+    required: true
+  },
 })
 
 // Custom validation function
-personSchema.statics.validateUpdate = function(update) {
+personSchema.statics.validateUpdate = function (update) {
   const UpdateModel = this.model(this.modelName);
   const dummy = new UpdateModel(update);
   return dummy.validateSync();
@@ -48,7 +42,6 @@ personSchema.set('toJSON', {
     delete returnedObject.__v
   }
 })
-module.exports = mongoose.model('Person', personSchema)
 
 const Person = mongoose.model('Person', personSchema)
 
@@ -64,6 +57,8 @@ const getPersonsCounts = async () => {
   }
 };
 
-module.exports = {
-  Person, getPersonsCounts, 
+const modelPersonExports = {
+  Person, getPersonsCounts,
 };
+
+module.exports = modelPersonExports
