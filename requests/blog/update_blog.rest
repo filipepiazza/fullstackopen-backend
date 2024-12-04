@@ -1,4 +1,4 @@
-PUT  http://localhost:3001/api/blogs/6712e3566cba5f1b67ea7eaf
+PUT  http://localhost:3001/api/blogs/6718367e12ea4297dfcc6522
 content-type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hdHNhbCIsImlkIjoiNjcxMThiMjkyMWZhMDhiNTY3YTRkZTE0IiwiaWF0IjoxNzI5MjU1MjY1fQ.e3-0ITSfpqlps6dmuWaGZwP-a_h2FdpW8qW4yHJ27h0
 
@@ -6,5 +6,5 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hd
     "title": "new blog6",
     "author": "lucy smith",
     "url": "someurl2.com",
-    "likes": "4"
+    "likes": "5"
 }

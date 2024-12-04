@@ -1,10 +1,11 @@
-POST http://localhost:3001/api/blogs
+POST  http://localhost:3001/api/blogs/6718367e12ea4297dfcc6522/comments
 content-type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hdHNhbCIsImlkIjoiNjcxMThiMjkyMWZhMDhiNTY3YTRkZTE0IiwiaWF0IjoxNzI5MjU1MjY1fQ.e3-0ITSfpqlps6dmuWaGZwP-a_h2FdpW8qW4yHJ27h0
 
 {
-    "title": "new blog7",
+    "title": "new blog6",
     "author": "lucy smith",
     "url": "someurl2.com",
-    "likes": "0"
+    "likes": "5",
+    "comments": "some new coment"
 }

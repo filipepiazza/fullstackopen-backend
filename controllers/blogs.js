@@ -1,20 +1,20 @@
-const blogsRouter = require('express').Router()
+const blogsRouter = require("express").Router();
 
-const loggerExports = require('../utils/logger')
-const { info, errorLogger } = loggerExports
+const loggerExports = require("../utils/logger");
+const { info, errorLogger } = loggerExports;
 
-const modelBlogExports = require('../models/blog')
-const { Blog } = modelBlogExports
+const modelBlogExports = require("../models/blog");
+const { Blog } = modelBlogExports;
 
-const configExports = require('../utils/config')
-const { MONGODB_URI, PORT, SECRET } = configExports
+const configExports = require("../utils/config");
+const { MONGODB_URI, PORT, SECRET } = configExports;
 
-const middlewareExports = require('../utils/middleware')
-const {userExtractor} = middlewareExports
+const middlewareExports = require("../utils/middleware");
+const { userExtractor } = middlewareExports;
 
-const User = require('../models/user')
+const User = require("../models/user");
 
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 
 // ...
 // const getTokenFrom = request => {
@@ -25,112 +25,148 @@ const jwt = require('jsonwebtoken')
 //     return null
 // }
 
-blogsRouter.get('/', async (request, response) => {
-    const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
-    response.json(blogs)
-})
+blogsRouter.get("/", async (request, response) => {
+  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
+  response.json(blogs);
+});
 
-blogsRouter.get('/:id', async (request, response, next) => {
-    const id = request.params.id
-    const blog = await Blog.findById(id)
-    if (blog) {
-        response.json(blog)
+blogsRouter.get("/:id", async (request, response, next) => {
+  const id = request.params.id;
+  const blog = await Blog.findById(id);
+  if (blog) {
+    response.json(blog);
+  } else {
+    response.status(404).end();
+  }
+});
+
+blogsRouter.post("/", userExtractor, async (request, response, next) => {
+  const body = request.body;
+
+  // const decodedToken = jwt.verify(request.token, SECRET)
+  // if (!decodedToken.id) {
+  //     return response.status(401).json({ error: 'token invalid' })
+  //}
+  const user = request.user; //await User.findById(decodedToken.id)
+
+  const blog = new Blog({
+    title: body.title,
+    author: body.author,
+    url: body.url,
+    likes: body.likes,
+    user: user.id,
+  });
+
+  const savedBlog = await blog.save();
+
+  user.blogs = user.blogs.concat(savedBlog._id);
+  await user.save();
+
+  response.status(201).json(savedBlog);
+});
+
+blogsRouter.post(
+  "/:id/comments",
+  userExtractor,
+  async (request, response, next) => {
+    const body = request.body;
+    const user = request.user;
+    const comments = body.comments;
+
+    if (user) {
+      // Validate the update payload
+      info(request.body);
+      const validationError = Blog.validateUpdate(request.body);
+      if (validationError) {
+        info(validationError);
+        return response.status(400).json({ error: validationError.message });
+      }
+      info("user: ", user);
+      const blog = await Blog.findById(request.params.id);
+      info("blog: ", blog);
+      info(blog.user.toString());
+      info(user.id);
+
+      info(blog.comments);
+      info(body.comments);
+
+      const updatedComments = blog.comments.concat(body.comments);
+      info(updatedComments);
+      const updatedBlog = await Blog.findByIdAndUpdate(
+        request.params.id,
+        { comments },
+        { new: true, runValidators: true, context: "query" }
+      );
+      info(updatedBlog);
+      response.json(updatedBlog);
     } else {
-        response.status(404).end()
+      return response.status(400).json({ error: "JsonWebTokenError" });
     }
-})
+  }
+);
+blogsRouter.put("/:id", userExtractor, async (request, response, next) => {
+  const { title, author, url, likes } = request.body;
+  info(request.body);
 
-blogsRouter.post('/', userExtractor, async (request, response, next) => {
-    const body = request.body
+  // const decodedToken = jwt.verify(request.token, SECRET)
+  // if (!decodedToken.id) {
+  //     return response.status(401).json({ error: 'token invalid' })
+  // }
 
-    // const decodedToken = jwt.verify(request.token, SECRET)
-    // if (!decodedToken.id) {
-    //     return response.status(401).json({ error: 'token invalid' })
-    //}
-    const user = request.user //await User.findById(decodedToken.id)
+  const user = request.user; //await User.findById(decodedToken.id)
 
-    const blog = new Blog({
-        title: body.title,
-        author: body.author,
-        url: body.url,
-        likes: body.likes,
-        user: user.id
-    })
-
-    const savedBlog = await blog.save()
-
-    user.blogs = user.blogs.concat(savedBlog._id)
-    await user.save()
-
-    response.status(201).json(savedBlog)
-})
-
-blogsRouter.put('/:id', userExtractor, async (request, response, next) => {
-    const { title, author, url, likes } = request.body
-    info(request.body);
-
-    // const decodedToken = jwt.verify(request.token, SECRET)
-    // if (!decodedToken.id) {
-    //     return response.status(401).json({ error: 'token invalid' })
-    // }
-
-    const user = request.user//await User.findById(decodedToken.id)
-
-    if (user) {
-        // Validate the update payload
-        const validationError = Blog.validateUpdate(request.body);
-        if (validationError) {
-            return response.status(400).json({ error: validationError.message });
-        }
-        info("user: ", user)
-        const blog = await Blog.findById(request.params.id)
-        info("blog: ", blog)
-        info(blog.user.toString())
-        info(user.id)
-        if (blog.user.toString() === user.id) {
-            const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, { likes }, { new: true, runValidators: true, context: 'query' })
-            info(updatedBlog);
-            response.json(updatedBlog)
-        }
-        else {
-            return response.status(401).json({ error: 'token invalid' })
-        }
-
+  if (user) {
+    // Validate the update payload
+    const validationError = Blog.validateUpdate(request.body);
+    if (validationError) {
+      return response.status(400).json({ error: validationError.message });
     }
-    else {
-        return response.status(400).json({ error: "JsonWebTokenError" });
+    info("user: ", user);
+    const blog = await Blog.findById(request.params.id);
+    info("blog: ", blog);
+    info(blog.user.toString());
+    info(user.id);
+    if (blog.user.toString() === user.id) {
+      const updatedBlog = await Blog.findByIdAndUpdate(
+        request.params.id,
+        { likes },
+        { new: true, runValidators: true, context: "query" }
+      );
+      info(updatedBlog);
+      response.json(updatedBlog);
+    } else {
+      return response.status(401).json({ error: "token invalid" });
     }
-})
+  } else {
+    return response.status(400).json({ error: "JsonWebTokenError" });
+  }
+});
 
-blogsRouter.delete('/:id', userExtractor, async (request, response, next) => {
+blogsRouter.delete("/:id", userExtractor, async (request, response, next) => {
+  // const decodedToken = jwt.verify(request.token, SECRET)
+  // info("requesttoken: ", request.token)
+  // if (!decodedToken.id) {
+  //     return response.status(401).json({ error: 'token invalid' })
+  // }
+  // info("id: ", decodedToken.id)
+  const user = request.user; //await User.findById(decodedToken.id)
 
-    // const decodedToken = jwt.verify(request.token, SECRET)
-    // info("requesttoken: ", request.token)
-    // if (!decodedToken.id) {
-    //     return response.status(401).json({ error: 'token invalid' })
-    // }
-    // info("id: ", decodedToken.id)
-    const user = request.user//await User.findById(decodedToken.id)
-
-    if (user) {
-        info("user: ", user)
-        const blog = await Blog.findById(request.params.id)
-        info("blog: ", blog)
-        info(blog.user.toString())
-        info(user.id)
-        if (blog.user.toString() === user.id) {
-            const result = await Blog.findByIdAndDelete(request.params.id)
-            info(result);
-            response.status(204).end()
-        }
-        else {
-            return response.status(401).json({ error: 'token invalid' })
-        }
+  if (user) {
+    info("user: ", user);
+    const blog = await Blog.findById(request.params.id);
+    info("blog: ", blog);
+    info(blog.user.toString());
+    info(user.id);
+    if (blog.user.toString() === user.id) {
+      const result = await Blog.findByIdAndDelete(request.params.id);
+      info(result);
+      response.status(204).end();
+    } else {
+      return response.status(401).json({ error: "token invalid" });
     }
-    else {
-        return response.status(400).json({ error: "JsonWebTokenError" });
-    }
+  } else {
+    return response.status(400).json({ error: "JsonWebTokenError" });
+  }
+});
 
-})
-
-module.exports = blogsRouter
+module.exports = blogsRouter;
